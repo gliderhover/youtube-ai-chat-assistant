@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const { spawn, spawnSync } = require('child_process');
 const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
@@ -8,15 +9,48 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-const URI = process.env.REACT_APP_MONGODB_URI || process.env.MONGODB_URI || process.env.REACT_APP_MONGO_URI;
+// Primary SRV URI (mongodb+srv://...) for Atlas
+const SRV_URI =
+  process.env.REACT_APP_MONGODB_URI || process.env.MONGODB_URI || process.env.REACT_APP_MONGO_URI || '';
+// Optional standard (non-SRV) URI for environments where SRV lookups fail
+// e.g. mongodb://user:pass@host1,host2,host3/?replicaSet=...
+const STANDARD_URI = process.env.MONGODB_URI_STANDARD || process.env.REACT_APP_MONGODB_URI_STANDARD || '';
 const DB = 'chatapp';
 
 let db;
 
 async function connect() {
-  const client = await MongoClient.connect(URI);
-  db = client.db(DB);
-  console.log('MongoDB connected');
+  // Try SRV URI first (mongodb+srv://)
+  if (SRV_URI) {
+    console.log('MongoDB: attempting SRV URI from REACT_APP_MONGODB_URI/MONGODB_URI/REACT_APP_MONGO_URI');
+    try {
+      const client = await MongoClient.connect(SRV_URI);
+      db = client.db(DB);
+      console.log('MongoDB connected via SRV URI');
+      return;
+    } catch (err) {
+      console.error('MongoDB SRV connection failed:', err.message);
+    }
+  } else {
+    console.log('MongoDB: no SRV URI configured (REACT_APP_MONGODB_URI / MONGODB_URI / REACT_APP_MONGO_URI)');
+  }
+
+  // Fallback: standard (non-SRV) URI if provided
+  if (STANDARD_URI) {
+    console.log('MongoDB: attempting fallback via standard URI from MONGODB_URI_STANDARD/REACT_APP_MONGODB_URI_STANDARD');
+    try {
+      const client = await MongoClient.connect(STANDARD_URI);
+      db = client.db(DB);
+      console.log('MongoDB connected via standard URI');
+      return;
+    } catch (err) {
+      console.error('MongoDB standard URI connection failed:', err.message);
+    }
+  } else {
+    console.log('MongoDB: no standard URI configured (MONGODB_URI_STANDARD / REACT_APP_MONGODB_URI_STANDARD)');
+  }
+
+  console.error('MongoDB unavailable. All configured connection attempts failed.');
 }
 
 app.get('/', (req, res) => {
@@ -53,6 +87,17 @@ try {
   youtubeJob = null;
 }
 
+// At startup once: resolve yt-dlp path for debug endpoint
+let whichYtdlp = '';
+try {
+  const whichCmd = process.platform === 'win32' ? 'where' : 'which';
+  const whichRes = spawnSync(whichCmd, ['yt-dlp'], { encoding: 'utf8' });
+  whichYtdlp = (whichRes.stdout || '').trim() || (whichRes.stderr || '').trim() || '';
+  console.log('yt-dlp path (where/which):', whichYtdlp || '(not found)');
+} catch (e) {
+  console.log('yt-dlp path check failed:', e.message);
+}
+
 app.get('/api/youtube', (req, res) => res.json({ ok: true, message: 'YouTube routes loaded' }));
 
 app.post('/api/youtube/start', (req, res) => {
@@ -78,7 +123,7 @@ app.get('/api/youtube/progress', (req, res) => {
   const progress = youtubeJob.getProgress(jobId);
   if (!progress) return res.status(404).json({ error: 'Job not found' });
   const percent = progress.total ? Math.round((100 * progress.done) / progress.total) : 0;
-  res.json({ done: progress.done, total: progress.total, status: progress.status, percent, error: progress.error || null });
+  res.json({ done: progress.done, total: progress.total, status: progress.status, percent });
 });
 
 app.get('/api/youtube/result', (req, res) => {
@@ -91,12 +136,50 @@ app.get('/api/youtube/result', (req, res) => {
   res.json(result.data);
 });
 
+// Temporary debug: prove per-video yt-dlp works from Node (spawn, not exec)
+app.get('/api/youtube/debug-one', (req, res) => {
+  const url = req.query.url;
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return res.status(400).json({ error: 'url query param required' });
+  }
+  const proc = spawn('yt-dlp', ['-J', url.trim()]);
+  let stdout = '';
+  let stderr = '';
+  const limit = 2000;
+  proc.stdout.on('data', (chunk) => {
+    if (stdout.length < limit) stdout += chunk.toString();
+  });
+  proc.stderr.on('data', (chunk) => {
+    if (stderr.length < limit) stderr += chunk.toString();
+  });
+  proc.on('error', (err) => {
+    res.json({
+      ok: false,
+      exitCode: null,
+      stdoutPreview: stdout.slice(0, limit),
+      stderrPreview: (stderr || err.message).slice(0, limit),
+      whichYtdlp,
+      nodeVersion: process.version,
+    });
+  });
+  proc.on('close', (code) => {
+    res.json({
+      ok: code === 0,
+      exitCode: code,
+      stdoutPreview: stdout.slice(0, limit),
+      stderrPreview: stderr.slice(0, limit),
+      whichYtdlp,
+      nodeVersion: process.version,
+    });
+  });
+});
+
 // ── Users ────────────────────────────────────────────────────────────────────
 
 app.use((req, res, next) => {
   if (db) return next();
   if (['/api/users', '/api/sessions', '/api/messages'].some((p) => req.path.startsWith(p))) {
-    return res.status(503).json({ error: 'Database not connected' });
+    return res.status(503).json({ error: 'Database unavailable' });
   }
   next();
 });
@@ -281,7 +364,8 @@ const PORT = process.env.PORT || 3001;
 // Start server even if MongoDB fails so YouTube and root routes still work
 app.listen(PORT, () => {
   console.log(`Server on http://localhost:${PORT}`);
-  connect()
-    .then(() => console.log('MongoDB connected'))
-    .catch((err) => console.error('MongoDB connection failed:', err.message));
+  connect().catch((err) => {
+    // connect() already logs detailed errors; this is just a final guard.
+    console.error('MongoDB connection attempt threw unexpectedly:', err.message);
+  });
 });

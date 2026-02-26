@@ -1,0 +1,120 @@
+.play-video-card-root {
+  margin-top: 0.5rem;
+}
+
+.play-video-card {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  max-width: 420px;
+  padding: 0;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(110, 231, 183, 0.2);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.play-video-card:hover {
+  border-color: rgba(110, 231, 183, 0.45);
+  box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.15);
+}
+
+.play-video-card-thumb-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 160px;
+  height: 90px;
+  border-radius: 8px 0 0 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.play-video-card-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.play-video-card-thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(110, 231, 183, 0.15), rgba(110, 231, 183, 0.05));
+}
+
+.play-video-card-play-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+}
+
+.play-video-card-body {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.play-video-card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.play-video-card-stats {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Inter', sans-serif;
+}
+
+.play-video-card-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #f87171;
+  font-family: 'Inter', sans-serif;
+}
+
+.play-video-card-close-matches {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.play-video-card-close-matches-label {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: 'Inter', sans-serif;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.play-video-card-close-matches-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.play-video-card-close-match-link {
+  color: #6ee7b7;
+  text-decoration: none;
+}
+
+.play-video-card-close-match-link:hover {
+  text-decoration: underline;
+}

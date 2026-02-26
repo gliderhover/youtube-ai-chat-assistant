@@ -1,0 +1,143 @@
+.metric-vs-time-root {
+  margin-top: 0.5rem;
+}
+
+.metric-vs-time-inline {
+  cursor: pointer;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(110, 231, 183, 0.2);
+  background: rgba(0, 0, 0, 0.25);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.metric-vs-time-inline:hover {
+  border-color: rgba(110, 231, 183, 0.4);
+  box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.15);
+}
+
+.metric-vs-time-chart-wrap {
+  padding: 0.75rem 1rem 0.5rem;
+}
+
+.metric-vs-time-chart-label {
+  margin: 0 0 0.5rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6ee7b7;
+}
+
+.metric-vs-time-actions {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.metric-vs-time-download-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-family: 'Inter', sans-serif;
+  color: #6ee7b7;
+  background: rgba(110, 231, 183, 0.1);
+  border: 1px solid rgba(110, 231, 183, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.metric-vs-time-download-btn:hover {
+  background: rgba(110, 231, 183, 0.18);
+  border-color: rgba(110, 231, 183, 0.5);
+}
+
+.metric-vs-time-hint {
+  display: block;
+  padding: 0.35rem 1rem 0.5rem;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Inter', sans-serif;
+}
+
+.metric-vs-time-tooltip {
+  background: rgba(15, 15, 35, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.82rem;
+  font-family: 'Inter', sans-serif;
+  color: #e2e8f0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.metric-vs-time-tooltip-label {
+  margin: 0 0 0.4rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.metric-vs-time-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #f87171;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Modal */
+.metric-vs-time-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.metric-vs-time-modal {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  background: rgba(15, 15, 35, 0.98);
+  border: 1px solid rgba(110, 231, 183, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+}
+
+.metric-vs-time-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 1;
+  transition: color 0.2s, background 0.2s;
+}
+
+.metric-vs-time-modal-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.metric-vs-time-modal-content {
+  padding: 2rem 1.5rem 1.5rem;
+  min-width: 400px;
+}
+
+.metric-vs-time-modal-content .metric-vs-time-chart-wrap {
+  padding: 0;
+}
+
+.metric-vs-time-modal-content .recharts-responsive-container {
+  min-height: 360px;
+}

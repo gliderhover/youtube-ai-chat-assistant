@@ -16,33 +16,38 @@ Create a `.env` file in the project root with:
 | Variable | Required | Where used | Description |
 |----------|----------|------------|-------------|
 | `REACT_APP_OPENAI_API_KEY` | Yes | Frontend (baked in at build) | OpenAI API key. Get one at [OpenAI dashboard](https://platform.openai.com/api-keys). |
-| `REACT_APP_MONGODB_URI` | Yes | Backend | MongoDB Atlas connection string. Format: `mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/` |
+| `REACT_APP_MONGODB_URI` | Yes | Backend | MongoDB Atlas SRV connection string. Format: `mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/` |
+| `MONGODB_URI_STANDARD` | Optional | Backend | Standard (non-SRV) MongoDB connection string. Format: `mongodb://host1,host2,host3/?replicaSet=...`. Used as a fallback when SRV lookups fail (e.g. `querySrv ECONNREFUSED`). |
 | *(none)* | – | – | The YouTube Channel Download tab now uses the local `yt-dlp` executable instead of the YouTube Data API. No extra API key is required; just install `yt-dlp` on the server and ensure it is on the `PATH`. |
 | `REACT_APP_API_URL` | Production only | Frontend (baked in at build) | Full URL of the backend, e.g. `https://your-backend.onrender.com`. Leave blank for local dev (proxy handles it). |
 
-The backend also accepts `MONGODB_URI` or `REACT_APP_MONGO_URI` as the MongoDB connection string if you prefer those names.
+The backend also accepts `MONGODB_URI` or `REACT_APP_MONGO_URI` as the MongoDB SRV connection string if you prefer those names, and `MONGODB_URI_STANDARD` (or `REACT_APP_MONGODB_URI_STANDARD`) as a non-SRV fallback.
 
 ### Example `.env` (local development)
 
 ```
 REACT_APP_OPENAI_API_KEY=sk-proj-...
 REACT_APP_MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/
+# Optional standard URI (non-SRV) used as fallback if SRV fails:
+# MONGODB_URI_STANDARD=mongodb://user:password@host1,host2,host3:27017/?replicaSet=YourReplicaSet
 # REACT_APP_API_URL not needed locally — the dev server proxies /api to localhost:3001
 ```
 
 ### Regenerating the sample channel data file
 
-The file `public/veritasium_channel_data_10.json` is a sample of channel data (placeholder until regenerated). To regenerate it with real data for 10 videos from [@veritasium](https://www.youtube.com/@veritasium) using `yt-dlp`:
+The file `public/veritasium_channel_data_10.json` is a sample of channel data produced by the same yt-dlp-backed job used by the backend. To regenerate it with real data for 10 videos from [@veritasium](https://www.youtube.com/@veritasium) using `yt-dlp`:
 
 1. Install `yt-dlp` locally and ensure the `yt-dlp` command is available on your `PATH`.
-2. From the project root run: `node scripts/fetch-veritasium-sample.js`
+2. From the project root run: `npm run gen:veritasium`
 3. The script writes the result to `public/veritasium_channel_data_10.json`.
+4. With `npm run client` running, you can open `http://localhost:3000/veritasium_channel_data_10.json` in your browser to verify the JSON structure (it should include `channelUrl`, `fetched_at`, `video_count`, and a `videos` array with one object per video).
 
 ## MongoDB Setup
 
 1. Create a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account and cluster.
-2. Get your connection string (Database → Connect → Drivers).
-3. Put it in `.env` as `REACT_APP_MONGODB_URI`.
+2. In Atlas, go to **Database → Connect → Drivers**.
+3. Copy the **SRV connection string** (starts with `mongodb+srv://`) and put it in `.env` as `REACT_APP_MONGODB_URI`.
+4. If your network has DNS SRV issues (e.g. `querySrv ECONNREFUSED _mongodb._tcp...`), also copy the **Standard connection string** (starts with `mongodb://` and lists multiple hosts) and put it in `.env` as `MONGODB_URI_STANDARD`.
 
 All collections are created automatically on first use.
 

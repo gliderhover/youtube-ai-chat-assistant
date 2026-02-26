@@ -34,7 +34,14 @@ export default function YouTubeDownload({ username, firstName, lastName, onLogou
         if (p.status === 'complete') {
           stopPolling();
           const res = await getYoutubeResult(jobId);
-          setResult(res);
+          if (res && res.videos && res.videos.length === 0) {
+            setError(
+              'No videos could be extracted. Per-video extraction failed. Check JS runtime, cookies, or video availability.'
+            );
+            setResult(null);
+          } else {
+            setResult(res);
+          }
         } else if (p.status === 'error') {
           stopPolling();
           const errMsg = p.error || 'Job failed';
@@ -180,7 +187,8 @@ export default function YouTubeDownload({ username, firstName, lastName, onLogou
                 />
               </div>
               <p className="ytd-progress-text">
-                {progress.done} / {progress.total} videos downloaded
+                Attempted {progress.done} of {progress.total}; succeeded {progress.successCount ?? 0} of{' '}
+                {progress.maxVideos ?? progress.total} videos.
               </p>
             </div>
           )}

@@ -1,0 +1,125 @@
+.generate-image-result-root {
+  margin-top: 0.5rem;
+}
+
+.generate-image-result-inline {
+  display: inline-block;
+  cursor: pointer;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(110, 231, 183, 0.2);
+  background: rgba(0, 0, 0, 0.25);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  max-width: 320px;
+}
+
+.generate-image-result-inline:hover {
+  border-color: rgba(110, 231, 183, 0.4);
+  box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.15);
+}
+
+.generate-image-result-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 280px;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.generate-image-result-actions {
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.generate-image-result-download-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-family: 'Inter', sans-serif;
+  color: #6ee7b7;
+  background: rgba(110, 231, 183, 0.1);
+  border: 1px solid rgba(110, 231, 183, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.generate-image-result-download-btn:hover {
+  background: rgba(110, 231, 183, 0.18);
+  border-color: rgba(110, 231, 183, 0.5);
+}
+
+.generate-image-result-hint {
+  display: block;
+  padding: 0.3rem 0.75rem 0.5rem;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Inter', sans-serif;
+}
+
+.generate-image-result-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #f87171;
+  font-family: 'Inter', sans-serif;
+}
+
+.generate-image-result-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.generate-image-result-modal {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  background: rgba(15, 15, 35, 0.98);
+  border: 1px solid rgba(110, 231, 183, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+  padding: 2.5rem 1.5rem 1.5rem;
+}
+
+.generate-image-result-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 1;
+  transition: color 0.2s, background 0.2s;
+}
+
+.generate-image-result-modal-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.generate-image-result-modal-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  max-height: 75vh;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.generate-image-result-modal-actions {
+  margin-top: 1rem;
+  text-align: center;
+}
