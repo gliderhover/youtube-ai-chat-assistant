@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { streamChat, chatWithCsvTools, CODE_KEYWORDS } from '../services/gemini';
+import { streamChat, chatWithCsvTools, CODE_KEYWORDS } from '../services/openai';
 import { parseCsvToRows, executeTool, computeDatasetSummary, enrichWithEngagement, buildSlimCsv } from '../services/csvTools';
 import {
   getSessions,
@@ -110,7 +110,7 @@ function StructuredParts({ parts }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function Chat({ username, onLogout }) {
+export default function Chat({ username, firstName, lastName, onLogout, setPage }) {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -124,6 +124,7 @@ export default function Chat({ username, onLogout }) {
   const [streaming, setStreaming] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [dbUnavailable, setDbUnavailable] = useState(false);
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -136,9 +137,19 @@ export default function Chat({ username, onLogout }) {
   // On login: load sessions from DB; 'new' means an unsaved pending chat
   useEffect(() => {
     const init = async () => {
-      const list = await getSessions(username);
-      setSessions(list);
-      setActiveSessionId('new'); // always start with a fresh empty chat on login
+      try {
+        const list = await getSessions(username);
+        setSessions(list);
+      } catch (err) {
+        if (err.message && err.message.includes('Database not connected')) {
+          setSessions([]);
+          setDbUnavailable(true);
+        } else {
+          console.error('Failed to load sessions', err);
+          setSessions([]);
+        }
+      }
+      setActiveSessionId('new');
     };
     init();
   }, [username]);
@@ -148,6 +159,10 @@ export default function Chat({ username, onLogout }) {
       setMessages([]);
       return;
     }
+    if (String(activeSessionId).startsWith('local-')) {
+      // Local-only session while DB is unavailable: keep in-memory messages only.
+      return;
+    }
     // If a session was just created during an active send, messages are already
     // in state and streaming is in progress — don't wipe them.
     if (justCreatedSessionRef.current) {
@@ -155,7 +170,7 @@ export default function Chat({ username, onLogout }) {
       return;
     }
     setMessages([]);
-    loadMessages(activeSessionId).then(setMessages);
+    loadMessages(activeSessionId).then(setMessages).catch(() => setMessages([]));
   }, [activeSessionId]);
 
   useEffect(() => {
@@ -326,11 +341,25 @@ export default function Chat({ username, onLogout }) {
     let sessionId = activeSessionId;
     if (sessionId === 'new') {
       const title = chatTitle();
-      const { id } = await createSession(username, 'lisa', title);
-      sessionId = id;
-      justCreatedSessionRef.current = true; // tell useEffect to skip the reload
-      setActiveSessionId(id);
-      setSessions((prev) => [{ id, agent: 'lisa', title, createdAt: new Date().toISOString(), messageCount: 0 }, ...prev]);
+      try {
+        const { id } = await createSession(username, 'lisa', title);
+        sessionId = id;
+        justCreatedSessionRef.current = true; // tell useEffect to skip the reload
+        setActiveSessionId(id);
+        setSessions((prev) => [{ id, agent: 'lisa', title, createdAt: new Date().toISOString(), messageCount: 0 }, ...prev]);
+      } catch (err) {
+        if (err.message && err.message.includes('Database not connected')) {
+          setDbUnavailable(true);
+          sessionId = `local-${Date.now()}`;
+          setActiveSessionId(sessionId);
+          setSessions((prev) => [
+            { id: sessionId, agent: 'lisa', title, createdAt: new Date().toISOString(), messageCount: 0 },
+            ...prev,
+          ]);
+        } else {
+          throw err;
+        }
+      }
     }
 
     // ── Routing intent (computed first so we know whether Python/base64 is needed) ──
@@ -407,8 +436,8 @@ ${sessionSummary}${slimCsvBlock}
     setCsvContext(null);
     setStreaming(true);
 
-    // Store display text only — base64 is never persisted
-    await saveMessage(sessionId, 'user', userContent, capturedImages.length ? capturedImages : null);
+    // Store display text only — base64 is never persisted (ignore errors when DB unavailable)
+    saveMessage(sessionId, 'user', userContent, capturedImages.length ? capturedImages : null).catch(() => {});
 
     const imageParts = capturedImages.map((img) => ({ mimeType: img.mimeType, data: img.data }));
 
@@ -432,15 +461,18 @@ ${sessionSummary}${slimCsvBlock}
     let toolCalls = [];
 
     try {
+      const userInfo = { username, firstName, lastName };
       if (useTools) {
         // ── Function-calling path: Gemini picks tool + args, JS executes ──────
         console.log('[Chat] useTools=true | rows:', sessionCsvRows.length, '| headers:', sessionCsvHeaders);
-        const { text: answer, charts: returnedCharts, toolCalls: returnedCalls } = await chatWithCsvTools(
-          history,
-          promptForGemini,
-          sessionCsvHeaders,
-          (toolName, args) => executeTool(toolName, args, sessionCsvRows)
-        );
+        const { text: answer, charts: returnedCharts, toolCalls: returnedCalls } =
+          await chatWithCsvTools(
+            history,
+            promptForGemini,
+            sessionCsvHeaders,
+            (toolName, args) => executeTool(toolName, args, sessionCsvRows),
+            userInfo
+          );
         fullContent = answer;
         toolCharts = returnedCharts || [];
         toolCalls = returnedCalls || [];
@@ -460,7 +492,13 @@ ${sessionSummary}${slimCsvBlock}
         );
       } else {
         // ── Streaming path: code execution or search ─────────────────────────
-        for await (const chunk of streamChat(history, promptForGemini, imageParts, useCodeExecution)) {
+        for await (const chunk of streamChat(
+          history,
+          promptForGemini,
+          imageParts,
+          useCodeExecution,
+          userInfo
+        )) {
           if (abortRef.current) break;
           if (chunk.type === 'text') {
             fullContent += chunk.text;
@@ -493,18 +531,18 @@ ${sessionSummary}${slimCsvBlock}
       );
     }
 
-    // Save plain text + any tool charts to DB
+    // Save plain text + any tool charts to DB (ignore errors when DB unavailable)
     const savedContent = structuredParts
       ? structuredParts.filter((p) => p.type === 'text').map((p) => p.text).join('\n')
       : fullContent;
-    await saveMessage(
+    saveMessage(
       sessionId,
       'model',
       savedContent,
       null,
       toolCharts.length ? toolCharts : null,
       toolCalls.length ? toolCalls : null
-    );
+    ).catch(() => {});
 
     setSessions((prev) =>
       prev.map((s) => (s.id === sessionId ? { ...s, messageCount: s.messageCount + 2 } : s))
@@ -535,6 +573,14 @@ ${sessionSummary}${slimCsvBlock}
       <aside className="chat-sidebar">
         <div className="sidebar-top">
           <h1 className="sidebar-title">Chat</h1>
+          <nav className="sidebar-nav">
+            <button type="button" className="sidebar-nav-link active">
+              Chat
+            </button>
+            <button type="button" className="sidebar-nav-link" onClick={() => setPage?.('youtube')}>
+              YouTube Channel Download
+            </button>
+          </nav>
           <button className="new-chat-btn" onClick={handleNewChat}>
             + New Chat
           </button>
@@ -575,7 +621,11 @@ ${sessionSummary}${slimCsvBlock}
         </div>
 
         <div className="sidebar-footer">
-          <span className="sidebar-username">{username}</span>
+          <span className="sidebar-username" title={username}>
+            {firstName && lastName
+              ? `Logged in as: ${firstName} ${lastName}`
+              : username}
+          </span>
           <button onClick={onLogout} className="sidebar-logout">
             Log out
           </button>

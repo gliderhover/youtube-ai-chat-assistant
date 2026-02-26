@@ -15,8 +15,9 @@ Create a `.env` file in the project root with:
 
 | Variable | Required | Where used | Description |
 |----------|----------|------------|-------------|
-| `REACT_APP_GEMINI_API_KEY` | Yes | Frontend (baked in at build) | Google Gemini API key. Get one at [Google AI Studio](https://aistudio.google.com/apikey). |
+| `REACT_APP_OPENAI_API_KEY` | Yes | Frontend (baked in at build) | OpenAI API key. Get one at [OpenAI dashboard](https://platform.openai.com/api-keys). |
 | `REACT_APP_MONGODB_URI` | Yes | Backend | MongoDB Atlas connection string. Format: `mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/` |
+| *(none)* | – | – | The YouTube Channel Download tab now uses the local `yt-dlp` executable instead of the YouTube Data API. No extra API key is required; just install `yt-dlp` on the server and ensure it is on the `PATH`. |
 | `REACT_APP_API_URL` | Production only | Frontend (baked in at build) | Full URL of the backend, e.g. `https://your-backend.onrender.com`. Leave blank for local dev (proxy handles it). |
 
 The backend also accepts `MONGODB_URI` or `REACT_APP_MONGO_URI` as the MongoDB connection string if you prefer those names.
@@ -24,10 +25,18 @@ The backend also accepts `MONGODB_URI` or `REACT_APP_MONGO_URI` as the MongoDB c
 ### Example `.env` (local development)
 
 ```
-REACT_APP_GEMINI_API_KEY=AIzaSy...
+REACT_APP_OPENAI_API_KEY=sk-proj-...
 REACT_APP_MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/
 # REACT_APP_API_URL not needed locally — the dev server proxies /api to localhost:3001
 ```
+
+### Regenerating the sample channel data file
+
+The file `public/veritasium_channel_data_10.json` is a sample of channel data (placeholder until regenerated). To regenerate it with real data for 10 videos from [@veritasium](https://www.youtube.com/@veritasium) using `yt-dlp`:
+
+1. Install `yt-dlp` locally and ensure the `yt-dlp` command is available on your `PATH`.
+2. From the project root run: `node scripts/fetch-veritasium-sample.js`
+3. The script writes the result to `public/veritasium_channel_data_10.json`.
 
 ## MongoDB Setup
 
@@ -49,6 +58,8 @@ One document per registered user.
 | `username` | string | Lowercase username |
 | `password` | string | bcrypt hash |
 | `email` | string | Email address (optional) |
+| `firstName` | string | User's first name (required in UI) |
+| `lastName` | string | User's last name (required in UI) |
 | `createdAt` | string | ISO timestamp |
 
 #### Collection: `sessions`
@@ -213,6 +224,7 @@ All packages are installed via `npm install`. Key dependencies:
 ## Features
 
 - **Create account / Login** – Username + password, hashed with bcrypt
+- **YouTube Channel Download** – Tab to download channel video metadata (title, description, transcript, duration, counts, URLs) for up to 100 videos via job + polling; progress bar and Download JSON when complete
 - **Session-based chat history** – Each conversation is a separate session; sidebar lists all chats with delete option
 - **Streaming Gemini responses** – Text streams in real time with animated "..." while thinking; Stop button to cancel
 - **Google Search grounding** – Answers include cited web sources for factual queries
@@ -230,6 +242,14 @@ All packages are installed via `npm install`. Key dependencies:
 ## Chat System Prompt
 
 The AI’s system instructions are loaded from **`public/prompt_chat.txt`**. Edit this file to change the assistant’s behavior (tone, role, format, etc.). Changes take effect on the next message; no rebuild needed.
+
+### Manual test: chat personalization (e.g. Daniel Yang)
+
+1. **Create account** with First name `Daniel`, Last name `Yang`, plus username/password/email.
+2. **Log in** with the same credentials.
+3. Check the sidebar footer shows **"Logged in as: Daniel Yang"**.
+4. **Start a new chat** and send any first message; the first assistant reply should greet you by first name (e.g. "Hi Daniel — …" or "Hi Daniel, …").
+5. Ask **"What's my name?"** and confirm the assistant uses your full name (Daniel Yang).
 
 ### How to Get a Good Persona Prompt (Make the AI Sound Like Someone)
 

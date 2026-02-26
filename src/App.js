@@ -1,14 +1,27 @@
 import { useState } from 'react';
 import Auth from './components/Auth';
 import Chat from './components/Chat';
+import YouTubeDownload from './components/YouTubeDownload';
 import './App.css';
 
 function App() {
-  const [user, setUser] = useState(() => localStorage.getItem('chatapp_user'));
+  const [page, setPage] = useState('chat');
+  const [user, setUser] = useState(() => {
+    const raw = localStorage.getItem('chatapp_user');
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && parsed.username) return parsed;
+      return { username: String(raw) };
+    } catch {
+      return { username: raw };
+    }
+  });
 
-  const handleLogin = (username) => {
-    localStorage.setItem('chatapp_user', username);
-    setUser(username);
+  const handleLogin = (userObj) => {
+    if (!userObj || !userObj.username) return;
+    localStorage.setItem('chatapp_user', JSON.stringify(userObj));
+    setUser(userObj);
   };
 
   const handleLogout = () => {
@@ -17,7 +30,26 @@ function App() {
   };
 
   if (user) {
-    return <Chat username={user} onLogout={handleLogout} />;
+    if (page === 'youtube') {
+      return (
+        <YouTubeDownload
+          username={user.username}
+          firstName={user.firstName}
+          lastName={user.lastName}
+          onLogout={handleLogout}
+          setPage={setPage}
+        />
+      );
+    }
+    return (
+      <Chat
+        username={user.username}
+        firstName={user.firstName}
+        lastName={user.lastName}
+        onLogout={handleLogout}
+        setPage={setPage}
+      />
+    );
   }
   return <Auth onLogin={handleLogin} />;
 }

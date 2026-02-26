@@ -56,6 +56,39 @@
   border-color: rgba(255, 255, 255, 0.25);
 }
 
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.sidebar-nav-link {
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-nav-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.sidebar-nav-link.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 600;
+  cursor: default;
+}
+
 /* Session list */
 
 .sidebar-sessions {
@@ -226,6 +259,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.chat-db-banner {
+  padding: 0.5rem 1.5rem;
+  background: rgba(255, 193, 7, 0.12);
+  border-bottom: 1px solid rgba(255, 193, 7, 0.25);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
 }
 
 .chat-header {

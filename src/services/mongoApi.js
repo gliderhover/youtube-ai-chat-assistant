@@ -6,16 +6,24 @@ const api = async (path, options = {}) => {
     ...options,
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(text || res.statusText);
+  if (!res.ok) {
+    try {
+      const j = text ? JSON.parse(text) : {};
+      throw new Error(j.error || text || res.statusText);
+    } catch (e) {
+      if (e instanceof SyntaxError) throw new Error(text || res.statusText);
+      throw e;
+    }
+  }
   return text ? JSON.parse(text) : {};
 };
 
 // ── Users ────────────────────────────────────────────────────────────────────
 
-export const createUser = async (username, password, email = '') => {
+export const createUser = async (username, password, email = '', firstName = '', lastName = '') => {
   await api('/api/users', {
     method: 'POST',
-    body: JSON.stringify({ username, password, email }),
+    body: JSON.stringify({ username, password, email, firstName, lastName }),
   });
 };
 
@@ -24,7 +32,13 @@ export const findUser = async (username, password) => {
     method: 'POST',
     body: JSON.stringify({ username, password }),
   });
-  return data.ok ? { username: data.username } : null;
+  return data.ok
+    ? {
+        username: data.username,
+        firstName: data.firstName || null,
+        lastName: data.lastName || null,
+      }
+    : null;
 };
 
 // ── Sessions ─────────────────────────────────────────────────────────────────
