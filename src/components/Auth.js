@@ -5,6 +5,8 @@ import './Auth.css';
 export default function Auth({ onLogin }) {
   const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,22 +19,36 @@ export default function Auth({ onLogin }) {
     try {
       const name = username.trim().toLowerCase();
       if (mode === 'create') {
-        await createUser(name, password, email.trim());
+        const safeFirst = firstName.trim();
+        const safeLast = lastName.trim();
+        if (!safeFirst || !safeLast) {
+          setError('First name and last name are required');
+          setLoading(false);
+          return;
+        }
+        await createUser(name, password, email.trim(), safeFirst, safeLast);
         setError('');
         setMode('login');
         setPassword('');
         setEmail('');
+        setFirstName('');
+        setLastName('');
       } else {
         const user = await findUser(name, password);
         if (!user) throw new Error('User not found or invalid password');
-        onLogin(user.username);
+        onLogin(user);
       }
     } catch (err) {
-      try {
-        const j = JSON.parse(err.message);
-        setError(j.error || err.message);
-      } catch {
-        setError(err.message || 'Something went wrong');
+      const msg = err.message || '';
+      if (msg.includes('Proxy error') || msg.includes('ECONNREFUSED') || msg.includes('Failed to fetch')) {
+        setError('Cannot reach the backend. Make sure the server is running on http://localhost:3001.');
+      } else {
+        try {
+          const j = JSON.parse(msg);
+          setError(j.error || msg);
+        } catch {
+          setError(msg || 'Something went wrong');
+        }
       }
     } finally {
       setLoading(false);
@@ -56,14 +72,34 @@ export default function Auth({ onLogin }) {
             autoComplete="username"
           />
           {mode === 'create' && (
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
+            <>
+              <input
+                type="text"
+                placeholder="First name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                minLength={1}
+                autoComplete="given-name"
+              />
+              <input
+                type="text"
+                placeholder="Last name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                minLength={1}
+                autoComplete="family-name"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+            </>
           )}
           <input
             type="password"

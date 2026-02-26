@@ -33,8 +33,30 @@ async function loadSystemPrompt() {
 // useCodeExecution: pass true to use codeExecution tool (CSV/analysis),
 //                   false (default) to use googleSearch tool.
 // Note: Gemini does not support both tools simultaneously.
-export const streamChat = async function* (history, newMessage, imageParts = [], useCodeExecution = false) {
-  const systemInstruction = await loadSystemPrompt();
+export const streamChat = async function* (
+  history,
+  newMessage,
+  imageParts = [],
+  useCodeExecution = false,
+  userInfo
+) {
+  const baseInstruction = await loadSystemPrompt();
+  let systemInstruction = baseInstruction;
+  if (userInfo && (userInfo.firstName || userInfo.lastName || userInfo.username)) {
+    const fullName = [userInfo.firstName, userInfo.lastName].filter(Boolean).join(' ');
+    const displayName = fullName || userInfo.username;
+    const identityLine = `The user's name is ${displayName}${
+      userInfo.username && userInfo.username !== displayName ? ` (username: ${userInfo.username})` : ''
+    }.`;
+    const greetingLine =
+      !history?.length && userInfo.firstName
+        ? `When there is no prior chat history (a new conversation), greet the user by their first name (${userInfo.firstName}) in your first response.`
+        : '';
+    const extra = `\n\nUSER IDENTITY AND GREETING RULES:\n${identityLine}${
+      greetingLine ? `\n${greetingLine}` : ''
+    }`;
+    systemInstruction = (baseInstruction + extra).trim();
+  }
   const tools = useCodeExecution ? [CODE_EXEC_TOOL] : [SEARCH_TOOL];
   const model = genAI.getGenerativeModel({
     model: MODEL,
@@ -128,8 +150,30 @@ export const streamChat = async function* (history, newMessage, imageParts = [],
 // executeFn(toolName, args) → plain JS object with the result
 // Returns the final text response from the model.
 
-export const chatWithCsvTools = async (history, newMessage, csvHeaders, executeFn) => {
-  const systemInstruction = await loadSystemPrompt();
+export const chatWithCsvTools = async (
+  history,
+  newMessage,
+  csvHeaders,
+  executeFn,
+  userInfo
+) => {
+  const baseInstruction = await loadSystemPrompt();
+  let systemInstruction = baseInstruction;
+  if (userInfo && (userInfo.firstName || userInfo.lastName || userInfo.username)) {
+    const fullName = [userInfo.firstName, userInfo.lastName].filter(Boolean).join(' ');
+    const displayName = fullName || userInfo.username;
+    const identityLine = `The user's name is ${displayName}${
+      userInfo.username && userInfo.username !== displayName ? ` (username: ${userInfo.username})` : ''
+    }.`;
+    const greetingLine =
+      !history?.length && userInfo.firstName
+        ? `When there is no prior chat history (a new conversation), greet the user by their first name (${userInfo.firstName}) in your first response.`
+        : '';
+    const extra = `\n\nUSER IDENTITY AND GREETING RULES:\n${identityLine}${
+      greetingLine ? `\n${greetingLine}` : ''
+    }`;
+    systemInstruction = (baseInstruction + extra).trim();
+  }
   const model = genAI.getGenerativeModel({
     model: MODEL,
     tools: [{ functionDeclarations: CSV_TOOL_DECLARATIONS }],

@@ -56,6 +56,39 @@
   border-color: rgba(255, 255, 255, 0.25);
 }
 
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.sidebar-nav-link {
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-nav-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.sidebar-nav-link.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 600;
+  cursor: default;
+}
+
 /* Session list */
 
 .sidebar-sessions {
@@ -226,6 +259,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.chat-db-banner {
+  padding: 0.5rem 1.5rem;
+  background: rgba(255, 193, 7, 0.12);
+  border-bottom: 1px solid rgba(255, 193, 7, 0.25);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
 }
 
 .chat-header {
@@ -938,6 +979,64 @@
 .tool-call-result {
   color: rgba(52, 211, 153, 0.75);
   word-break: break-all;
+}
+
+/* Stats card (compute_stats_json tool result) */
+.stats-card {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(110, 231, 183, 0.2);
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+}
+
+.stats-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stats-card-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6ee7b7;
+}
+
+.stats-card-meta {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.stats-card-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1.25rem;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.stats-card-grid dt {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+.stats-card-grid dd {
+  margin: 0;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-card-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #f87171;
 }
 
 /* ── Engagement chart ────────────────────────────────────────────────── */
